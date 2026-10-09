@@ -3,22 +3,20 @@ import json
 import httpx
 from datetime import date
 
-# 1. Сразу проверяем ключ
 key = os.environ.get("YANDEX_API_KEY")
 if not key:
-    print("❌ ERROR: YANDEX_API_KEY не найден в переменных окружения!")
+    print("❌ ERROR: YANDEX_API_KEY не найден!")
     raise RuntimeError("Missing API key")
-else:
-    # Не показываем весь ключ, но покажем, что он есть
-    print(f"✅ DEBUG: API key found (length {len(key)})")
+
+print(f"✅ DEBUG: API key found (length {len(key)})")
 
 base = "https://api.rasp.yandex-net.ru/v3.0"
 today = date.today().isoformat()
 
+# Оставили только рабочие станции
 stations = {
     "s2000003": "Москва (Курский вокзал)",
     "s9603206": "Санкт-Петербург (Московский вокзал)",
-    "s2210001": "Симферополь (Пассажирский)",
 }
 
 result = {}
@@ -39,17 +37,21 @@ for code, name in stations.items():
             },
             timeout=10.0
         )
-        # Если Яндекс сказал «нет» (403, 404 и т.д.) — тут будет понятная ошибка
         resp.raise_for_status()
         data = resp.json()
+    except httpx.HTTPStatusError as e:
+        print(f"⚠️ WARNING: станция {code} ({name}) вернула ошибку: {e}")
+        print("⚠️ Пропускаем эту станцию и продолжаем дальше.")
+        result[code] = []
+        continue
     except Exception as e:
-        print(f"❌ ERROR: запрос к станции {code} упал: {e}")
-        raise e
+        print(f"❌ ERROR: непредвиденная ошибка для {code}: {e}")
+        result[code] = []
+        continue
 
     trains = []
     schedule = data.get("schedule", [])
     if not isinstance(schedule, list):
-        print(f"⚠️ WARNING: schedule не список для {code}, тип: {type(schedule)}")
         schedule = []
 
     for item in schedule:
@@ -63,8 +65,8 @@ for code, name in stations.items():
     result[code] = trains
     print(f"✅ DEBUG: станция {code} -> {len(trains)} поездов")
 
-# Пишем файл в корень репозитория
 with open("data.json", "w", encoding="utf-8") as f:
     json.dump(result, f, ensure_ascii=False, indent=2)
 
 print("✅ DEBUG: data.json успешно записан!")
+
