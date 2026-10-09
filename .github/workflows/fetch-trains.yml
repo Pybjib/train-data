@@ -1,3 +1,10 @@
+name: Fetch train data
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -12,7 +19,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 👇 ЭТА СТРОКА ОБЯЗАТЕЛЬНА — без неё будет exit code 1
       - name: Install dependencies
         run: pip install httpx
 
@@ -37,4 +43,3 @@ jobs:
               \"content\": \"\$(base64 data.json | tr -d '\n')\",
               \"branch\": \"${BRANCH}\"
             }"
-
