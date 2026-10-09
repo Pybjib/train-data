@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Расписание поездов</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h1 { text-align: center; color: #333; }
+    .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+    select, button { padding: 10px 16px; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .results { display: grid; gap: 12px; }
+    .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .label { color: #888; font-size: 14px; }
+    .value { font-weight: 600; color: #222; }
+    .platform-unknown { color: #999; font-style: italic; }
+    @media (max-width: 500px) { .card { grid-template-columns: 1fr; } .controls { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <h1>Расписание прибытия поездов</h1>
+  <div class="controls">
+    <!-- Коды станций — они нужны для API Яндекса -->
+    <select id="stationSelect">
+      <option value="s2000003">Москва (Курский вокзал)</option>
+      <option value="s9603206">Санкт-Петербург (Московский вокзал)</option>
+      <option value="s2018100">Симферополь (Пассажирский)</option>
+    </select>
+    <button onclick="loadTrains()">Показать поезда</button>
+  </div>
+  <div id="results" class="results"></div>
+
+  <footer style="margin-top: 30px; text-align: center; color: #777; font-size: 13px;">
+    Данные о расписании и путях предоставлены сервисом Яндекс Расписания — rasp.yandex.ru
+  </footer>
+
+  <script>
+    // Вставь сюда ссылку на data.json с GitHub Pages
+    const DATA_URL = "https://pybjib.github.io/train-data/data.json";
+
+    async function loadTrains() {
+      const station = document.getElementById('stationSelect').value;
+      const container = document.getElementById('results');
+      container.innerHTML = 'Загрузка...';
+
+      try {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) throw new Error('Не удалось загрузить данные');
+        const data = await res.json();
+
+        const trains = data[station] || [];
+        container.innerHTML = '';
+
+        if (trains.length === 0) {
+          container.innerHTML = '<p>Нет данных для этой станции.</p>';
+          return;
+        }
+
+        trains.forEach(t => {
+          const platformText = t.platform
+            ? t.platform
+            : '<span class="platform-unknown">Путь пока неизвестен</span>';
+
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div><span class="label">Поезд</span><span class="value">${t.number}</span></div>
+            <div><span class="label">Маршрут</span><span class="value">${t.title}</span></div>
+            <div><span class="label">Прибытие</span><span class="value">${t.arrival}</span></div>
+            <div><span class="label">Путь</span><span class="value">${platformText}</span></div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p>Ошибка загрузки данных. Попробуйте позже.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
