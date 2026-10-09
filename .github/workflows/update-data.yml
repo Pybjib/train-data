@@ -1,0 +1,45 @@
+name: Update train data
+
+on:
+  schedule:
+    # 0 21 * * * → 21:00 UTC → 00:00 по Москве
+    # 0 9 * * *  → 09:00 UTC → 12:00 по Москве
+    - cron: "0 9,21 * * *"
+  workflow_dispatch:  # можно запустить вручную кнопкой в Actions, если нужно срочно
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # обязательно: без этого git push не сработает
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Generate data.json
+        env:
+          YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
+        run: python ./.github/scripts/fetch_data.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.name "GitHub Action"
+          git config --local user.email "action@github.com"
+
+          # Проверяем, изменился ли файл
+          if ! git diff --exit-code HEAD -- data.json > /dev/null; then
+            echo "Changes detected. Committing and pushing..."
+            git add data.json
+            git commit -m "Update train data"
+            git push
+          else
+            echo "No changes in data.json. Skipping commit."
+          fi
