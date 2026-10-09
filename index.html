@@ -15,14 +15,12 @@
     .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .label { color: #888; font-size: 14px; }
     .value { font-weight: 600; color: #222; }
-    .platform-unknown { color: #999; font-style: italic; }
     @media (max-width: 500px) { .card { grid-template-columns: 1fr; } .controls { flex-direction: column; } }
   </style>
 </head>
 <body>
   <h1>Расписание прибытия поездов</h1>
   <div class="controls">
-    <!-- Коды станций — они нужны для API Яндекса -->
     <select id="stationSelect">
       <option value="s2000003">Москва (Курский вокзал)</option>
       <option value="s9603206">Санкт-Петербург (Московский вокзал)</option>
@@ -33,12 +31,12 @@
   <div id="results" class="results"></div>
 
   <footer style="margin-top: 30px; text-align: center; color: #777; font-size: 13px;">
-    Данные о расписании и путях предоставлены сервисом Яндекс Расписания — rasp.yandex.ru
+    Данные предоставлены Яндекс Расписаниями
   </footer>
 
   <script>
     // Вставь сюда ссылку на data.json с GitHub Pages
-    const DATA_URL = "https://Pybjib.github.io/train-data/data.json";
+    const DATA_URL = "https://pybjib.github.io/train-data//data.json";
 
     async function loadTrains() {
       const station = document.getElementById('stationSelect').value;
@@ -61,7 +59,7 @@
         trains.forEach(t => {
           const platformText = t.platform
             ? t.platform
-            : '<span class="platform-unknown">Путь пока неизвестен</span>';
+            : '<span style="color:#999;font-style:italic;">Путь пока неизвестен</span>';
 
           const card = document.createElement('div');
           card.className = 'card';
