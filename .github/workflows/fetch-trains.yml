@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Критически важно для git push
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,19 +27,18 @@ jobs:
           YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
         run: python ./.github/scripts/fetch_data.py
 
-      - name: Upload updated data.json via GitHub API
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          BRANCH: main
+      # Вместо сложного curl — простой коммит
+      - name: Commit and push data.json
         run: |
-          curl -L \
-            -X PUT \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/data.json \
-            -d "{
-              \"message\": \"Update train data\",
-              \"content\": \"\$(base64 data.json | tr -d '\n')\",
-              \"branch\": \"${BRANCH}\"
-            }"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Проверяем, изменился ли файл
+          if ! git diff --exit-code HEAD -- data.json > /dev/null; then
+            echo "Changes detected. Committing and pushing..."
+            git add data.json
+            git commit -m "Update train data"
+            git push
+          else
+            echo "No changes in data.json. Skipping commit."
+          fi
